@@ -76,6 +76,7 @@ static int jpeg2avi_start(jpeg2avi_data_t *j2a, const char *filename)
         ESP_LOGE(TAG, "The given file name is too long");
         return ESP_ERR_INVALID_ARG;
     }
+    printf("\n\t003");
 
     j2a->buf_len = CUSTOM_CHUNK_SIZE + sizeof(AVI_CHUNK_HEAD);
     j2a->buffer = heap_caps_malloc(j2a->buf_len, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT); // for now, we request for inter dram space to improve speed

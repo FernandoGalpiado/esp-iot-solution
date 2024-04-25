@@ -16,7 +16,8 @@ extern "C" {
 #endif
 
 #define SPIFFS_MOUNT_POINT  "/spiffs"
-#define SD_CARD_MOUNT_POINT "/sdcard"
+#define SD_CARD_MOUNT_POINT "/sd"
+
 
 esp_err_t fm_sdcard_init(void);
 esp_err_t fm_spiffs_init(void);

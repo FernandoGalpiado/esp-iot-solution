@@ -12,13 +12,13 @@
 #include "nvs_flash.h"
 
 #include "camera_pin.h"
-#include "esp_camera.h"
+//#include "..\managed_components\espressif__esp32-camera\driver\include\esp_camera.h"
 #include "esp_timer.h"
 #include "file_manager.h"
 #include "avi_recorder.h"
 #include "app_wifi.h"
 
-#include "sensor.h"
+//#include "..\managed_components\espressif__esp32-camera\driver\include\sensor.h"
 
 #define EXAMPLE_SENSOR_FRAME_SIZE FRAMESIZE_VGA
 #define EXAMPLE_FB_COUNT          (8)
@@ -144,7 +144,9 @@ static esp_err_t server_start(void)
 void app_main()
 {
     const char *video_file = SD_CARD_MOUNT_POINT"/recorde.avi";
+    printf("\n\t000");
     int ret = camera_init(20000000, PIXFORMAT_JPEG, EXAMPLE_SENSOR_FRAME_SIZE, EXAMPLE_FB_COUNT);
+    printf("\n\t001");
     if (ret != 0) {
         ESP_LOGE(TAG, "camera init fail");
     } else {
@@ -154,6 +156,8 @@ void app_main()
 
         avi_recorder_start(video_file, _get_frame, _return_frame, resolution[EXAMPLE_SENSOR_FRAME_SIZE].width, resolution[EXAMPLE_SENSOR_FRAME_SIZE].height, 10 * 2, 1);
     }
+    printf("\n\t002");
+
 
 #if CONFIG_EXAMPLE_FILE_SERVER_ENABLED
     server_start();
