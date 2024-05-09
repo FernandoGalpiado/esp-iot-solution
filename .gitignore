@@ -24,11 +24,9 @@ GPATH
 
 # Components Unit Test Apps files
 components/**/build
-components/**/sdkconfig
 components/**/sdkconfig.old
 
 # Example project files
-examples/**/sdkconfig
 examples/**/sdkconfig.old
 examples/**/build
 

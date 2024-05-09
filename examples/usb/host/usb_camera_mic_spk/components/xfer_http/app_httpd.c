@@ -8,6 +8,7 @@
 #include "esp_http_server.h"
 #include "esp_timer.h"
 #include "esp_camera.h"
+//#include "..\managed_components\espressif__esp32-camera\driver\include\esp_camera.h"
 #include "sdkconfig.h"
 
 #if defined(ARDUINO_ARCH_ESP32) && defined(CONFIG_ARDUHAL_ESP_LOG)

@@ -20,8 +20,8 @@
 
 //#include "..\managed_components\espressif__esp32-camera\driver\include\sensor.h"
 
-#define EXAMPLE_SENSOR_FRAME_SIZE FRAMESIZE_VGA
-#define EXAMPLE_FB_COUNT          (8)
+#define EXAMPLE_SENSOR_FRAME_SIZE FRAMESIZE_HD
+#define EXAMPLE_FB_COUNT          (16)
 
 static const char *TAG = "video_recorder";
 
@@ -71,6 +71,7 @@ esp_err_t camera_init(uint32_t mclk_freq, const pixformat_t pixel_fromat, const 
     s->set_vflip(s, 1); //flip it back
     s->set_hmirror(s, 1);
     s->set_saturation(s, 1);
+    s->set_brightness(s, -2);
     //initial sensors are flipped vertically and colors are a bit saturated
     if (s->id.PID == OV3660_PID) {
         s->set_brightness(s, 1);  //up the blightness just a bit

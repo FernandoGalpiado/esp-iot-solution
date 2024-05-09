@@ -1,0 +1,16 @@
+dependencies:
+  button:
+    public: true
+    version: 2.*
+  esp32-camera:
+    public: true
+    version: ^2.0.2
+  esp_lvgl_port:
+    version: ^1
+  idf:
+    version: '>=5.0'
+description: Board Support Package for ESP32-S3-EYE
+targets:
+- esp32s3
+url: https://github.com/espressif/esp-bsp/tree/master/esp32_s3_eye
+version: 2.1.3

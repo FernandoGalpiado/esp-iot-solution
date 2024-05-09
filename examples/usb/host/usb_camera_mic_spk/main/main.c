@@ -14,14 +14,17 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "usb_stream.h"
-
+#include "usb_otg_esp32_s3_additions.h"
+//USB_SEL
+//BOOST_EN
+//DEV_VBUS_EN
 static const char *TAG = "uvc_mic_spk_demo";
 /****************** configure the example working mode *******************************/
 #define ENABLE_UVC_CAMERA_FUNCTION        1        /* enable uvc function */
-#define ENABLE_UAC_MIC_SPK_FUNCTION       1        /* enable uac mic+spk function */
+#define ENABLE_UAC_MIC_SPK_FUNCTION       0        /* enable uac mic+spk function */
 #if (ENABLE_UVC_CAMERA_FUNCTION)
-#define ENABLE_UVC_FRAME_RESOLUTION_ANY   1        /* Using any resolution found from the camera */
-#define ENABLE_UVC_WIFI_XFER              0        /* transfer uvc frame to wifi http */
+#define ENABLE_UVC_FRAME_RESOLUTION_ANY   0        /* Using any resolution found from the camera */
+#define ENABLE_UVC_WIFI_XFER              1        /* transfer uvc frame to wifi http */
 #endif
 #if (ENABLE_UAC_MIC_SPK_FUNCTION)
 #define ENABLE_UAC_MIC_SPK_LOOPBACK       0        /* transfer mic data to speaker */
@@ -53,7 +56,7 @@ static EventGroupHandle_t s_evt_handle;
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define DEMO_UVC_XFER_BUFFER_SIZE (45 * 1024)
 #else
-#define DEMO_UVC_XFER_BUFFER_SIZE (55 * 1024)
+#define DEMO_UVC_XFER_BUFFER_SIZE (110 * 1024)
 #endif
 
 #if (ENABLE_UVC_WIFI_XFER)
@@ -212,12 +215,16 @@ static void stream_state_changed_cb(usb_stream_state_t event, void *arg)
         break;
     }
 }
-
+//#include "hcd.h"
 void app_main(void)
 {
+//	usb_host_power_init();
+	esp_err_t ret = ESP_FAIL;
+//    ret = hcd_port_command(usb_dev->port_hdl, HCD_PORT_CMD_POWER_ON);
+//    UVC_CHECK_CONTINUE(ESP_OK == ret, "PORT Power failed");
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("httpd_txrx", ESP_LOG_INFO);
-    esp_err_t ret = ESP_FAIL;
+
     s_evt_handle = xEventGroupCreate();
     if (s_evt_handle == NULL) {
         ESP_LOGE(TAG, "line-%u event group create failed", __LINE__);
@@ -243,7 +250,7 @@ void app_main(void)
         /* match the any resolution of current camera (first frame size as default) */
         .frame_width = DEMO_UVC_FRAME_WIDTH,
         .frame_height = DEMO_UVC_FRAME_HEIGHT,
-        .frame_interval = FPS2INTERVAL(15),
+        .frame_interval = FRAME_INTERVAL_FPS_5,
         .xfer_buffer_size = DEMO_UVC_XFER_BUFFER_SIZE,
         .xfer_buffer_a = xfer_buffer_a,
         .xfer_buffer_b = xfer_buffer_b,
@@ -251,6 +258,8 @@ void app_main(void)
         .frame_buffer = frame_buffer,
         .frame_cb = &camera_frame_cb,
         .frame_cb_arg = NULL,
+		.frame_index = 4,
+		.interface_alt = 4,
     };
     /* config to enable uvc function */
     ret = uvc_streaming_config(&uvc_config);

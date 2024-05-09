@@ -15,7 +15,7 @@
 #include "esp_camera.h"
 #include "usb_device_uvc.h"
 #include "uvc_frame_config.h"
-#if CONFIG_CAMERA_MODULE_ESP_S3_EYE
+#if xxx
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 #include "freertos/event_groups.h"
 #include "bsp/esp-bsp.h"
@@ -145,7 +145,7 @@ static void camera_stop_cb(void *cb_ctx)
 {
     (void)cb_ctx;
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-#if CONFIG_CAMERA_MODULE_ESP_S3_EYE
+#if xxxx
     xEventGroupSetBits(s_event_group, EYES_CLOSE_BIT);
 #endif
 #endif
@@ -195,7 +195,7 @@ static esp_err_t camera_start_cb(uvc_format_t format, int width, int height, int
     }
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-#if CONFIG_CAMERA_MODULE_ESP_S3_EYE
+#if xxx
     xEventGroupSetBits(s_event_group, EYES_OPEN_BIT);
 #endif
 #endif
@@ -234,7 +234,7 @@ static void camera_fb_return_cb(uvc_fb_t *fb, void *cb_ctx)
 void app_main(void)
 {
     // if using esp-s3-eye board, show the GUI
-#if CONFIG_CAMERA_MODULE_ESP_S3_EYE
+#if NO_DISPLAY
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
     bsp_display_start();
     bsp_display_backlight_on();
@@ -273,7 +273,7 @@ void app_main(void)
     ESP_ERROR_CHECK(uvc_device_init(&config));
 
     while (1) {
-#if CONFIG_CAMERA_MODULE_ESP_S3_EYE
+#if NO_DISPLAY
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
         static uint32_t close_time_ms = 0;
         static uint32_t open_time_ms = 0;
