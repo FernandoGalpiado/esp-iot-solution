@@ -57,37 +57,30 @@ static esp_err_t init_camera(uint32_t xclk_freq_hz, pixformat_t pixel_format, fr
         .pixel_format = pixel_format, //YUV422,GRAYSCALE,RGB565,JPEG
         .frame_size = frame_size,    //QQVGA-UXGA, sizes above QVGA are not been recommended when not JPEG format.
 
-        .jpeg_quality = 10, //0-63
+        .jpeg_quality = 16, //0-63
         .fb_count = fb_count,       // For ESP32/ESP32-S2, if more than one, i2s runs in continuous mode. Use only with JPEG.
         .grab_mode = CAMERA_GRAB_LATEST,
         .fb_location = CAMERA_FB_IN_PSRAM
     };
 
-    //initialize the camera
-    esp_err_t ret = esp_camera_init(&camera_config);
+    // camera init
+    esp_err_t err = esp_camera_init(&camera_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Camera init failed with error 0x%x", err);
+        return err;
+    }
 
     sensor_t *s = esp_camera_sensor_get();
-    s->set_vflip(s, 1);//flip it back
+    s->set_vflip(s, 1); //flip it back
+    s->set_hmirror(s, 1);
+    s->set_saturation(s, -2);
+    s->set_brightness(s, 1);
     //initial sensors are flipped vertically and colors are a bit saturated
     if (s->id.PID == OV3660_PID) {
-        s->set_saturation(s, -2);//lower the saturation
+        s->set_brightness(s, 1);  //up the blightness just a bit
+        s->set_saturation(s, -2); //lower the saturation
     }
-
-    if (s->id.PID == OV3660_PID || s->id.PID == OV2640_PID) {
-        s->set_vflip(s, 1); //flip it back
-    } else if (s->id.PID == GC0308_PID) {
-        s->set_hmirror(s, 0);
-    } else if (s->id.PID == GC032A_PID) {
-        s->set_vflip(s, 1);
-    }
-
-    camera_sensor_info_t *s_info = esp_camera_sensor_get_info(&(s->id));
-
-    if (ESP_OK == ret && PIXFORMAT_JPEG == pixel_format && s_info->support_jpeg == true) {
-        auto_jpeg_support = true;
-    }
-
-    return ret;
+    return ESP_OK;
 }
 
 void app_main()
@@ -99,7 +92,7 @@ void app_main()
     xQueueIFrame = xQueueCreate(2, sizeof(camera_fb_t *));
 
     /* It is recommended to use a camera sensor with JPEG compression to maximize the speed */
-    TEST_ESP_OK(init_camera(10000000, PIXFORMAT_JPEG, FRAMESIZE_QVGA, 2));
+    TEST_ESP_OK(init_camera(20000000, PIXFORMAT_JPEG, FRAMESIZE_XGA, 8));
 
     TEST_ESP_OK(start_stream_server(xQueueIFrame, true));
 
@@ -110,5 +103,6 @@ void app_main()
         if (frame) {
             xQueueSend(xQueueIFrame, &frame, portMAX_DELAY);
         }
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }

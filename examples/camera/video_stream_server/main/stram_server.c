@@ -31,7 +31,14 @@ static esp_err_t stream_handler(httpd_req_t *req)
     uint8_t *_jpg_buf = NULL;
     char *part_buf[128];
 
+//    *      httpd_resp_set_status() - for setting the HTTP status string,
+//    *      httpd_resp_set_type()   - for setting the Content Type,
+//    *      httpd_resp_set_hdr()    - for appending any additional field
+//    *                                value entries in the response header
+
+//    httpd_resp_set_status(req, HTTPD_200);
     res = httpd_resp_set_type(req, _STREAM_CONTENT_TYPE);
+//    res = httpd_resp_set_type(req, "picture");
     if (res != ESP_OK) {
         return res;
     }
@@ -58,10 +65,17 @@ static esp_err_t stream_handler(httpd_req_t *req)
         if (res == ESP_OK) {
             res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
             if (res == ESP_OK) {
+
+//            	ESP_LOGI(TAG, "boundary");
+            	size_t lenbuf = 128;
+            	memset(part_buf, 0, lenbuf);
                 size_t hlen = snprintf((char *)part_buf, 128, _STREAM_PART, _jpg_buf_len, _timestamp.tv_sec, _timestamp.tv_usec);
                 res = httpd_resp_send_chunk(req, (const char *)part_buf, hlen);
+//                httpd_resp_set_hdr(req, part_buf, "60");
+
             }
             if (res == ESP_OK) {
+//            	ESP_LOGI(TAG, "ESP_OK boundary");
                 res = httpd_resp_send_chunk(req, (const char *)_jpg_buf, _jpg_buf_len);
             }
 
