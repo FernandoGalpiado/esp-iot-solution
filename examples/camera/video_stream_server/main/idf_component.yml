@@ -1,4 +1,5 @@
 dependencies:
+  espressif/mdns: "==1.4.0"
   idf: ">=4.4.1"
   camera:
     version: "*"

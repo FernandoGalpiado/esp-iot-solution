@@ -23,10 +23,20 @@
 
 static bool auto_jpeg_support = false; // whether the camera sensor support compression or JPEG encode
 static QueueHandle_t xQueueIFrame = NULL;
+static QueueHandle_t xQueueIFrameRear = NULL;
+//uint8_t bufFrameRear[157286];
+//#define BUFFER_SIZE	8
+#define FRAME_SIZE (100 * 1024) // Tamanho de cada frame
+#define BUFFER_SIZE 8          // Número de frames no buffer circular
+uint8_t *bufFrameRear[BUFFER_SIZE]; // Buffer circular
+camera_fb_t frameRear;
+//int head = 0; // Cabeça do buffer circular
+//int tail = 0; // Cauda do buffer circular
+//size_t frame_buf_len[BUFFER_SIZE];
 
 static const char *TAG = "video s_server";
 
-esp_err_t start_stream_server(const QueueHandle_t frame_i, const bool return_fb);
+esp_err_t start_stream_server(const QueueHandle_t frame_i, const QueueHandle_t frame_iRear, const bool return_fb);
 
 static esp_err_t init_camera(uint32_t xclk_freq_hz, pixformat_t pixel_format, framesize_t frame_size, uint8_t fb_count)
 {
@@ -92,21 +102,46 @@ void app_main()
     ESP_ERROR_CHECK(mdns_hostname_set("camera"));
     ESP_ERROR_CHECK(mdns_instance_name_set("My Camera Stream"));
 
+	for (int i = 0; i < BUFFER_SIZE; ++i) {
+		bufFrameRear[i] = (uint8_t *)heap_caps_malloc(FRAME_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+		if (bufFrameRear[i] == NULL) {
+			ESP_LOGE(TAG, "Failed to allocate memory for frame buffer %d.", i);
+		}
+	}
     camera_fb_t *frame;
+    camera_fb_t *pframeRear;
+//    memcpy(pframeRear,frame, sizeof(camera_fb_t *));
 
     xQueueIFrame = xQueueCreate(2, sizeof(camera_fb_t *));
+    xQueueIFrameRear = xQueueCreate(2, sizeof(camera_fb_t *));
 
     /* It is recommended to use a camera sensor with JPEG compression to maximize the speed */
     TEST_ESP_OK(init_camera(20000000, PIXFORMAT_JPEG, FRAMESIZE_XGA, 8));
 
-    TEST_ESP_OK(start_stream_server(xQueueIFrame, true));
+    TEST_ESP_OK(start_stream_server(xQueueIFrame, xQueueIFrameRear, true));
 
     ESP_LOGI(TAG, "Begin capture frame");
 
     while (true) {
         frame = esp_camera_fb_get();
         if (frame) {
+//				        camera_fb_t frameRear;
+//	   		frameRear.timestamp.tv_sec = frame->timestamp.tv_sec;
+//	        frameRear.timestamp.tv_usec = frame->timestamp.tv_usec;
+//	        frameRear.format = frame->format;
+//	        memcpy(bufFrameRear[0], &frame->buf, frame->len);
+//	        frameRear.buf = bufFrameRear[0];
+//	        frameRear.len = frame->len;
+
+//			memcpy(&pframeRear, &frame, sizeof(camera_config_t *));
+//			memcpy(bufFrameRear[0], frame->buf, frame->len);
+//	        frameRear.buf = bufFrameRear[0];
             xQueueSend(xQueueIFrame, &frame, portMAX_DELAY);
+            //        pframeRear = &frameRear;
+//            vTaskDelay(pdMS_TO_TICKS(50));
+//            xQueueSend(xQueueIFrame, &frame, portMAX_DELAY);
+//        	xQueueSend(xQueueIFrameRear, &pframeRear, portMAX_DELAY);
+        	
         }
         vTaskDelay(pdMS_TO_TICKS(100));
     }
