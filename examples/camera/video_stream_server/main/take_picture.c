@@ -18,6 +18,7 @@
 #include "app_wifi.h"
 #include "esp_camera.h"
 #include "mdns.h"
+#include "esp_ota_ops.h"
 #define TEST_ESP_OK(ret) assert(ret == ESP_OK)
 #define TEST_ASSERT_NOT_NULL(ret) assert(ret != NULL)
 
@@ -83,14 +84,37 @@ static esp_err_t init_camera(uint32_t xclk_freq_hz, pixformat_t pixel_format, fr
     return ESP_OK;
 }
 
+void check_free_memory() {
+    size_t free_spiram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);  // Verifica memória disponível para malloc (RAM de 8 bits)
+    size_t iram_free_internal = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);  // Verifica memória disponível em IRAM
+//    heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
+
+    printf("Free memory available for malloc (8-bit RAM): %d bytes", free_spiram);
+    printf("Free memory available in IRAM: %d bytes", iram_free_internal);
+}
+
 void app_main()
 {
+			/* Mark current app as valid */
+	const esp_partition_t *partition = esp_ota_get_running_partition();
+	printf("Currently running partition: %s\r\n", partition->label);
+
+	esp_ota_img_states_t ota_state;
+	if (esp_ota_get_state_partition(partition, &ota_state) == ESP_OK) {
+		if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+			esp_ota_mark_app_valid_cancel_rollback();
+		}
+	}
+	
+	
     app_wifi_main();
     
         // Inicializa o mDNS
     ESP_ERROR_CHECK(mdns_init());
     ESP_ERROR_CHECK(mdns_hostname_set("camera"));
     ESP_ERROR_CHECK(mdns_instance_name_set("My Camera Stream"));
+    
+    
 
     camera_fb_t *frame;
 
@@ -102,6 +126,9 @@ void app_main()
     TEST_ESP_OK(start_stream_server(xQueueIFrame, true));
 
     ESP_LOGI(TAG, "Begin capture frame");
+    check_free_memory();
+    
+    
 
     while (true) {
         frame = esp_camera_fb_get();
