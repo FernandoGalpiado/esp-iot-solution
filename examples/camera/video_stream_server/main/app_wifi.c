@@ -23,6 +23,11 @@
 #include "lwip/ip_addr.h"
 #endif
 
+#include <stdio.h>
+#include <stdint.h>
+#include "mbedtls/md.h"
+#define PASSWORD_MAX_LEN 32 // Comprimento máximo da senha gerada
+
 /* The examples use WiFi configuration that you can set via 'make menuconfig'.
 
    If you'd rather not, just change the below entries to strings with
@@ -84,6 +89,38 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     return;
 }
 
+void generate_secure_password(char *ssid, const char *key, char *password_out, size_t len) {
+    uint8_t mac[6];
+    uint8_t hash[32]; // SHA-256 produz 32 bytes
+    char input_str[64]; // Combinação da chave e MAC
+    esp_read_mac(mac, ESP_MAC_WIFI_SOFTAP); // Obtém o endereço MAC do Wi-Fi
+
+    // Formata a string de entrada combinando chave e MAC
+    snprintf(input_str, sizeof(input_str), "%s-%02X%02X%02X%02X%02X%02X",
+             key, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    // Calcula o hash SHA-256
+    mbedtls_md_context_t ctx;
+    mbedtls_md_init(&ctx);
+    mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 0);
+    mbedtls_md_starts(&ctx);
+    mbedtls_md_update(&ctx, (const unsigned char *)input_str, strlen(input_str));
+    mbedtls_md_finish(&ctx, hash);
+    mbedtls_md_free(&ctx);
+
+    // Converte os primeiros bytes do hash para string hexadecimal como senha
+    for (int i = 0; i < len && i < sizeof(hash); i++) {
+        snprintf(password_out + (i * 2), 3, "%02X", hash[i]);
+    }
+    password_out[len] = '\0'; // Garante que seja uma string terminada em nulo
+    printf("\n\t password: %s", password_out);
+    
+    
+    // Gerar SSID usando parte do MAC Address
+    sprintf(ssid, "STC##%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    printf("\n\t name: %s", ssid);
+}
+
 static void wifi_init_softap(esp_netif_t * netif)
 {
     if (strcmp(EXAMPLE_IP_ADDR, "192.168.4.1")) {
@@ -99,9 +136,19 @@ static void wifi_init_softap(esp_netif_t * netif)
     }
     wifi_config_t wifi_config;
     memset(&wifi_config, 0, sizeof(wifi_config_t));
-    snprintf((char *)wifi_config.ap.ssid, 32, "%s", EXAMPLE_ESP_WIFI_AP_SSID);
+    
+    
+    
+    char password[PASSWORD_MAX_LEN + 1];
+    char ssid_MAC[PASSWORD_MAX_LEN];
+	generate_secure_password(ssid_MAC, "MySecretKey", password, PASSWORD_MAX_LEN);
+	printf("Generated Password: %s\n", password);
+    
+    
+    
+    snprintf((char *)wifi_config.ap.ssid, 32, "%s", ssid_MAC);
     wifi_config.ap.ssid_len = strlen((char *)wifi_config.ap.ssid);
-    snprintf((char *)wifi_config.ap.password, 64, "%s", EXAMPLE_ESP_WIFI_AP_PASS);
+    snprintf((char *)wifi_config.ap.password, 64, "%s", password);
     wifi_config.ap.max_connection = EXAMPLE_MAX_STA_CONN;
     wifi_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
     if (strlen(EXAMPLE_ESP_WIFI_AP_PASS) == 0) {
@@ -116,7 +163,7 @@ static void wifi_init_softap(esp_netif_t * netif)
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
 
     ESP_LOGI(TAG, "wifi_init_softap finished.SSID:%s password:%s",
-             EXAMPLE_ESP_WIFI_AP_SSID, EXAMPLE_ESP_WIFI_AP_PASS);
+             ssid_MAC, password);
 }
 
 static void wifi_init_sta()
