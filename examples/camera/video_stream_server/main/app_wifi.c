@@ -109,7 +109,7 @@ void generate_secure_password(char *ssid, const char *key, char *password_out, s
     mbedtls_md_free(&ctx);
 
     // Converte os primeiros bytes do hash para string hexadecimal como senha
-    for (int i = 0; i < len && i < sizeof(hash); i++) {
+    for (int i = 0; i < len/2 && i < sizeof(hash); i++) {
         snprintf(password_out + (i * 2), 3, "%02X", hash[i]);
     }
     password_out[len] = '\0'; // Garante que seja uma string terminada em nulo
